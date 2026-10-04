@@ -144,28 +144,31 @@ int main()
     }
 
     printf("\n");
-    printf("Tensor Core Matrix Multiplication\n");
+printf("Tensor Core Matrix Multiplication\n\n");
 
-    printf("Matrix A : 64 x 64\n");
-    printf("Matrix B : 64 x 64\n");
-    printf("Matrix C : 64 x 64\n");
-    printf("Tile     : 16 x 16\n");
-    printf("Tiles    : 4 x 4 = 16\n");
-    printf("K tiles  : 4\n");
-    printf("Max error: %f\n", maxError);
-    if (maxError < 0.01f)
-        printf("Result   : CORRECT\n");
-    else
-        printf("Result   : INCORRECT\n");
-    printf("\nFirst 4x4 elements of C:\n");
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 4; j++)
-        {
-            printf("%8.2f ", C[i * N + j]);
-        }
-        printf("\n");
-    }
+printf("A : 64 x 64\n");
+printf("B : 64 x 64\n");
+printf("C : 64 x 64\n\n");
+
+printf("Tile size : 16 x 16\n");
+printf("Number of tiles : 16\n\n");
+
+printf("Maximum error : %f\n", maxError);
+
+if(maxError < 0.01)
+    printf("Result : PASS\n");
+else
+    printf("Result : FAIL\n");
+
+printf("\nFirst 4 x 4 elements of C:\n\n");
+
+for(int i = 0; i < 4; i++)
+{
+    for(int j = 0; j < 4; j++)
+        printf("%8.2f ", C[i*N+j]);
+
+    printf("\n");
+}
     cudaFree(d_A);
     cudaFree(d_B);
     cudaFree(d_C);
