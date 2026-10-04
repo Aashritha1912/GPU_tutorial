@@ -10,31 +10,22 @@ using namespace nvcuda;
 
 // Tensor Core matrix multiplication kernel
 // One warp (32 threads) computes one 16x16 tile of C.
-__global__ void matrixMulTensorCore(const half *A,
-                                    const half *B,
-                                    float *C)
+__global__ void matrixMulTensorCore(const half *A, const half *B, float *C)
 {
     // Each block corresponds to one 16x16 output tile
     int tileRow = blockIdx.y;
     int tileCol = blockIdx.x;
 
     // Matrix A fragment: 16x16
-    wmma::fragment<wmma::matrix_a,
-                   TILE, TILE, TILE,
-                   half,
-                   wmma::row_major> a_frag;
+    wmma::fragment<wmma::matrix_a, TILE, TILE, TILE, half, wmma::row_major> a_frag;
 
     // Matrix B fragment: 16x16
-    wmma::fragment<wmma::matrix_b,
-                   TILE, TILE, TILE,
-                   half,
-                   wmma::row_major> b_frag;
+    wmma::fragment<wmma::matrix_b, TILE, TILE, TILE, half, wmma::row_major> b_frag;
 
     // Accumulator fragment: 16x16
-    wmma::fragment<wmma::accumulator,
-                   TILE, TILE, TILE,
-                   float> c_frag;
+    wmma::fragment<wmma::accumulator, TILE, TILE, TILE, float> c_frag;
 
+                  
     // Initialize accumulator to zero
     wmma::fill_fragment(c_frag, 0.0f);
 
@@ -43,47 +34,26 @@ __global__ void matrixMulTensorCore(const half *A,
     for (int k = 0; k < N; k += TILE)
     {
         // Starting position of the 16x16 tile of A
-        const half *A_tile =
-            A + tileRow * TILE * N + k;
+        const half *A_tile = A + tileRow * TILE * N + k;
 
         // Starting position of the 16x16 tile of B
-        const half *B_tile =
-            B + k * N + tileCol * TILE;
+        const half *B_tile = B + k * N + tileCol * TILE;
 
         // Load 16x16 tile of A
-        wmma::load_matrix_sync(
-            a_frag,
-            A_tile,
-            N
-        );
+        wmma::load_matrix_sync( a_frag,A_tile,N);
 
         // Load 16x16 tile of B
-        wmma::load_matrix_sync(
-            b_frag,
-            B_tile,
-            N
-        );
+        wmma::load_matrix_sync(b_frag,B_tile,N);
 
         // Tensor Core matrix multiply-accumulate
-        c_frag = wmma::mma_sync(
-            c_frag,
-            a_frag,
-            b_frag,
-            c_frag
-        );
+        c_frag = wmma::mma_sync(c_frag,a_frag,b_frag,c_frag);
     }
 
     // Starting position of the output 16x16 tile
-    float *C_tile =
-        C + tileRow * TILE * N + tileCol * TILE;
+    float *C_tile =C + tileRow * TILE * N + tileCol * TILE;
 
     // Store the result
-    wmma::store_matrix_sync(
-        C_tile,
-        c_frag,
-        N,
-        wmma::mem_row_major
-    );
+    wmma::store_matrix_sync(C_tile,c_frag,N,wmma::mem_row_major);
 }
 
 
